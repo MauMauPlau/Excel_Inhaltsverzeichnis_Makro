@@ -1,0 +1,168 @@
+Sub InhaltsverzeichnisErstellen()
+    Dim ws As Worksheet
+    Dim indexWs As Worksheet
+    Dim indexRange As Range
+    Dim indexRow As Long
+    Dim btnLeft As Double
+    Dim btnTop As Double
+    Dim btnWidth As Double
+    Dim btnHeight As Double
+    Dim wsNames() As String
+    Dim i As Long
+    Dim j As Long
+    Dim temp As String
+    Dim rowIndex As Long
+    Dim hyperlink As hyperlink
+
+    
+    ' Neues Arbeitsblatt "Index" erstellen oder vorhandenes verwenden
+    On Error Resume Next
+    Set indexWs = ThisWorkbook.Sheets("Index")
+    On Error GoTo 0
+    
+    If indexWs Is Nothing Then
+        Set indexWs = ThisWorkbook.Sheets.Add(Before:=ThisWorkbook.Sheets(1))
+        indexWs.Name = "Index"
+    End If
+    
+    ' Hyperlink-Bereich im Index-Arbeitsblatt festlegen
+    Set indexRange = indexWs.Range("A8:G30")
+    
+    ' Inhaltsverzeichnis löschen
+    indexRange.ClearContents
+    indexWs.Columns("A:G").ColumnWidth = 23 'Spaltenbreite definieren
+    For rowIndex = 8 To 30
+    indexWs.Rows(rowIndex).RowHeight = 25 ' Zeilenhöhe in Punkten
+    Next rowIndex
+    
+    ' Array mit den Namen der Arbeitsblätter erstellen
+    ReDim wsNames(1 To ThisWorkbook.Sheets.Count - 1)
+    i = 1
+    For Each ws In ThisWorkbook.Sheets
+        If ws.Name <> "Index" Then
+            wsNames(i) = ws.Name
+            i = i + 1
+        End If
+    Next ws
+    
+    ' Arbeitsblattnamen alphabetisch sortieren (Bubble Sort)
+    For i = LBound(wsNames) To UBound(wsNames) - 1
+        For j = i + 1 To UBound(wsNames)
+            If UCase(wsNames(i)) > UCase(wsNames(j)) Then
+                temp = wsNames(i)
+                wsNames(i) = wsNames(j)
+                wsNames(j) = temp
+            End If
+        Next j
+    Next i
+    
+    ' Schleife durch alle Arbeitsblätter und Hyperlinks erstellen
+    indexRow = 1
+    For i = LBound(wsNames) To UBound(wsNames)
+        Set ws = ThisWorkbook.Sheets(wsNames(i))
+        ' Hyperlink im Index-Arbeitsblatt erstellen
+        indexWs.Hyperlinks.Add _
+            Anchor:=indexRange.Cells(indexRow), _
+            Address:="", _
+            SubAddress:="'" & ws.Name & "'!A5", _
+            TextToDisplay:=" "
+            
+    ' Auf allen anderen Arbeitsblättern Zeile 1 auf andere Höhe definieren
+            ws.Rows(1).RowHeight = 25
+    ' Zum Index löschen in Zeile 1 und neu erstellen
+        Set ZumIndexRange = ws.Range("A1:Z1")
+            ZumIndexRange.ClearContents
+    ' Schaltfläche erstellen
+    Set btn = ws.Buttons.Add( _
+        Left:=ws.Range("A1").Left, _
+        Top:=ws.Range("A1").Top, _
+        Width:=ws.Range("A1:C1").Width, _
+        Height:=ws.Range("A1:C1").Height)
+
+' Hyperlink-Objekt speichern
+    Set hyperlink = ws.Hyperlinks.Add( _
+        Anchor:=btn.TopLeftCell, _
+        Address:="", _
+        SubAddress:="Index!A1", _
+        TextToDisplay:="<-- zum Index")
+
+' Eigenschaften der Schaltfläche ändern
+    With btn
+        .Caption = hyperlink.TextToDisplay
+        .Font.Size = 20
+        .Font.Name = "Arial"
+        .Font.Bold = True
+        .Font.Color = RGB(0, 0, 0)
+        .OnAction = "'GotoSheet """ & "Index" & """'"
+    End With
+
+        indexRow = indexRow + 1
+    Next i
+    
+   
+    indexRow = 8
+    For i = LBound(wsNames) To UBound(wsNames)
+        Set ws = ThisWorkbook.Sheets(wsNames(i))
+        btnLeft = indexRange.Cells(indexRow - 7).Left
+        btnTop = indexRange.Cells(indexRow - 7).Top
+        btnWidth = indexRange.Cells(indexRow - 7).Width
+        btnHeight = indexRange.Cells(indexRow - 7).Height
+    
+        Set btn = indexWs.Buttons.Add(btnLeft, btnTop, btnWidth, btnHeight)
+        With btn
+            '.Width = 125 ' Breite in Punkten
+            '.Height = 21 ' Höhe in Punkten
+            .Font.Size = 12 ' Schriftgröße
+            .Font.Name = "Arial" ' Schriftart
+            .Font.Bold = True ' Fett formatieren
+            .Font.Color = RGB(0, 0, 0) ' Schriftfarbe
+            .OnAction = "'GotoSheet """ & ws.Name & """'"
+            .Text = ws.Name
+            .Placement = xlMoveAndSize ' Schaltfläche mit Zelle verschieben und Größe anpassen
+            .Top = btnTop + (btnHeight - .Height) / 2 ' Vertikal zentrieren
+            .Left = btnLeft + (btnWidth - .Width) / 2 ' Horizontal zentrieren
+
+        End With
+        
+            indexRow = indexRow + 1
+        Next i
+    
+    ' Button zum Aktualisieren des Index-Arbeitsblatts erstellen
+    Set btn = indexWs.Buttons.Add(indexWs.Range("G1").Left, _
+        indexWs.Range("G1").Top, _
+        indexWs.Range("G1").Width, _
+        indexWs.Range("G1").Height)
+    btn.OnAction = "'AktualisiereIndex'"
+    btn.Text = "Aktualisieren"
+End Sub
+
+
+Sub GotoSheet(sheetName As String)
+    ThisWorkbook.Sheets(sheetName).Activate
+End Sub
+
+Sub AktualisiereIndex()
+    Application.ScreenUpdating = False
+    
+    ' Index-Arbeitsblatt aktivieren
+    ThisWorkbook.Sheets("Index").Activate
+    
+    ' Alte Hyperlinks und Buttons löschen
+    With ActiveSheet
+        .Hyperlinks.Delete
+        .Buttons.Delete
+    End With
+    
+    ' Inhaltsverzeichnis neu erstellen
+    InhaltsverzeichnisErstellen
+    
+    Application.ScreenUpdating = True
+End Sub
+
+
+
+
+
+
+
+
