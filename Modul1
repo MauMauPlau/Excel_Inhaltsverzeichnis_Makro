@@ -154,6 +154,11 @@ End Sub
 Sub AktualisiereIndex()
     Application.ScreenUpdating = False
     
+        
+    ' Blattschutz aufheben für das Aktualisieren
+    Set blattschutz = ThisWorkbook.Worksheets("Index")
+    blattschutz.Unprotect Password:=""
+    
     ' Index-Arbeitsblatt aktivieren
     ThisWorkbook.Sheets("Index").Activate
     
@@ -167,6 +172,9 @@ Sub AktualisiereIndex()
     InhaltsverzeichnisErstellen
     
     Application.ScreenUpdating = True
+    
+    ' Blattschutz wieder aktivieren
+    blattschutz.Protect Password:=""
 End Sub
 
 
